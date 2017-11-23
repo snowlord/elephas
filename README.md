@@ -73,6 +73,38 @@ export SPARK_HOME=/usr/local/spark
 export PATH=$PATH:$SPARK_HOME/bin
 ```
 
+### Using Docker
+
+Install and get Docker running by following the instructions here (https://www.docker.com/).
+
+#### Building 
+
+The build takes quite a while to run the first time since many packages need to be downloaded and installed. In the same directory as the ```Dockerfile``` run the following commands
+
+```
+docker build . -t pyspark/elephas
+```
+
+#### Running
+
+The following command starts a container with the Notebook server listening for HTTP connections on port 8899 (since local Jupyter notebooks use 8888) without authentication configured. 
+
+```
+docker run -d -p 8899:8888 pyspark/elephas
+```
+
+#### Settings
+
+- Memory 
+In the ```Dockerfile``` the following lines can be adjusted to configure memory settings.
+
+```
+ENV SPARK_OPTS --driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M --driver-java-options=-Dlog4j.logLevel=info
+```
+
+- Other
+Other settings / configurations can be examined here https://github.com/kmader/docker-stacks/tree/master/keras-spark-notebook
+
 ### Basic example
 After installing both Elephas and Spark, training a model is done schematically as follows:
 
@@ -85,6 +117,9 @@ sc = SparkContext(conf=conf)
 
 - Define and compile a Keras model
 ```python
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
+from keras.optimizers import SGD
 model = Sequential()
 model.add(Dense(128, input_dim=784))
 model.add(Activation('relu'))
@@ -110,7 +145,7 @@ from elephas import optimizers as elephas_optimizers
 
 adagrad = elephas_optimizers.Adagrad()
 spark_model = SparkModel(sc,model, optimizer=adagrad, frequency='epoch', mode='asynchronous', num_workers=2)
-spark_model.train(rdd, nb_epoch=20, batch_size=32, verbose=0, validation_split=0.1, num_workers=8)
+spark_model.train(rdd, nb_epoch=20, batch_size=32, verbose=0, validation_split=0.1)
 ```
 
 - Run your script using spark-submit
